@@ -19,3 +19,7 @@ https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z
 |11/5|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)||
 |11/5|파이널 준비 세션|파이널 준비 세션||
 |11/5|파이널 발표 세션|파이널 발표 세션||
+
+정규세션은 목 19시부터 21시까지 진행됩니다. 구체적인 시간분배는 다음과 같기에 발표를 준비하시는 조들은 30분의 발표시간을 생각해주시면 될 것 같습니다.
+CV 30분발표 -> 학술부 CV 15분첨언 <br>
+NLP 30분발표 -> 학술부 NLP 15분첨언
