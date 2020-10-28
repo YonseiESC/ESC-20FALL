@@ -1,0 +1,778 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Natural Language Processing Assignment: Spam Filter\n",
+    "## Import necessary libs and datasets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import urllib.request\n",
+    "\n",
+    "urllib.request.urlretrieve(\"https://raw.githubusercontent.com/mohitgupta-omg/Kaggle-SMS-Spam-Collection-Dataset-/master/spam.csv\", filename=\"spam.csv\")\n",
+    "data = pd.read_csv('spam.csv', encoding='latin1')\n",
+    "\n",
+    "import torch\n",
+    "from torch import nn, optim\n",
+    "from torch.utils.data import Dataset, DataLoader"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Data Shape: (5572, 2)\n",
+      "0    4825\n",
+      "1     747\n",
+      "Name: isSpam, dtype: int64\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>text</th>\n",
+       "      <th>isSpam</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Go until jurong point, crazy.. Available only ...</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Ok lar... Joking wif u oni...</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Free entry in 2 a wkly comp to win FA Cup fina...</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>U dun say so early hor... U c already then say...</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Nah I don't think he goes to usf, he lives aro...</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                                text  isSpam\n",
+       "0  Go until jurong point, crazy.. Available only ...       0\n",
+       "1                      Ok lar... Joking wif u oni...       0\n",
+       "2  Free entry in 2 a wkly comp to win FA Cup fina...       1\n",
+       "3  U dun say so early hor... U c already then say...       0\n",
+       "4  Nah I don't think he goes to usf, he lives aro...       0"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "del data['Unnamed: 2']\n",
+    "del data['Unnamed: 3']\n",
+    "del data['Unnamed: 4']\n",
+    "\n",
+    "data['v1'] = data['v1'].replace(['ham','spam'],[0,1])   #Ham 이 0, spam 이 1\n",
+    "data['text'] = data['v2']\n",
+    "data['isSpam'] = data['v1']\n",
+    "\n",
+    "del data['v1'], data['v2']\n",
+    "\n",
+    "print(f'Data Shape: {data.shape}')\n",
+    "# imbalanced data\n",
+    "print(data['isSpam'].value_counts())\n",
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Preprocessing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import re\n",
+    "\n",
+    "def preprocess(string: str, *args, **kwargs) -> str:\n",
+    "    from nltk.stem.porter import PorterStemmer #어간 추출\n",
+    "    from nltk.corpus import stopwords\n",
+    "\n",
+    "    string = data.text\n",
+    "    string = string.str.replace(r'^.+@[^\\.].*\\.[a-z]{2,}$',\n",
+    "                                 'emailaddress') #이메일 한 번에 처리\n",
+    "    string = string.str.replace(r'^http\\://[a-zA-Z0-9\\-\\.]+\\.[a-zA-Z]{2,3}(/\\S*)?$',\n",
+    "                                  'webaddress') #웹주소 한 번에 처리\n",
+    "    string = string.str.replace(r'£|\\$', 'moneysymb') #이런건 왜 나올까\n",
+    "    string = string.str.replace(r'^\\(?[\\d]{3}\\)?[\\s-]?[\\d]{3}[\\s-]?[\\d]{4}$',\n",
+    "                                  'phonenumbr') #휴대폰 번호 한 번에 처리\n",
+    "    string = string.str.replace('[^a-zA-Z]', ' ') #영어 말고다 버려\n",
+    "    string= string.str.lower() #소문자\n",
+    "    \n",
+    "    ##불용어 제거\n",
+    "    stop_words = set(stopwords.words('english'))\n",
+    "    string = string.apply(lambda x: ' '.join(word for word \n",
+    "                                             in x.split() if word not in stop_words))\n",
+    "    ###어간만!              \n",
+    "    ps = PorterStemmer()\n",
+    "    final_processed = string.apply(lambda x: ' '.join(ps.stem(term) for term in x.split()))\n",
+    "    \n",
+    "    print(final_processed)\n",
+    "    return final_processed"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0       go jurong point crazi avail bugi n great world...\n",
+      "1                                   ok lar joke wif u oni\n",
+      "2       free entri wkli comp win fa cup final tkt st m...\n",
+      "3                     u dun say earli hor u c alreadi say\n",
+      "4                    nah think goe usf live around though\n",
+      "                              ...                        \n",
+      "5567    nd time tri contact u u moneysymb pound prize ...\n",
+      "5568                                b go esplanad fr home\n",
+      "5569                                    piti mood suggest\n",
+      "5570    guy bitch act like interest buy someth els nex...\n",
+      "5571                                       rofl true name\n",
+      "Name: text, Length: 5572, dtype: object\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "'go jurong point crazi avail bugi n great world la e buffet cine got amor wat'"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "final_processed = preprocess(data.text)\n",
+    "final_processed[0] #check"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Tokenizing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def tokenize(string: str, *args, **kwargs) -> list:\n",
+    "    from nltk.tokenize import word_tokenize\n",
+    "    document = [] \n",
+    "    word_docx = []\n",
+    "    for mails in final_processed:\n",
+    "        words = word_tokenize(mails)\n",
+    "        word_docx.append(words)\n",
+    "        for i in words:\n",
+    "            document.append(i)  \n",
+    "            \n",
+    "    return document, word_docx"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "5572"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "document, word_docx = tokenize(final_processed)\n",
+    "#tokenize(final_processed)[:10]\n",
+    "len(word_docx)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<br>\n",
+    "\n",
+    "Ex) \n",
+    "```python\n",
+    "tokenize('hello world!',  *args, **kwargs) = ['hello', 'world']\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Build Vocabulary\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def build_vocab(n, *args, **kwargs):\n",
+    "    from nltk import FreqDist\n",
+    "    #이중 리스트 벗기지 않아도 되는 document 미리 만들어둠\n",
+    "    vocab = FreqDist(document)\n",
+    "    vocab_size = n-1\n",
+    "    vocab =  vocab.most_common(vocab_size)\n",
+    "\n",
+    "    word_to_index = {word[0] : index+2 for index, word in enumerate(vocab)}\n",
+    "    word_to_index['unk_idx'] = 1\n",
+    "    word_to_index['padding_idx'] = 0\n",
+    "    #print(word_to_index)\n",
+    "    \n",
+    "    return vocab, word_to_index"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "vocab, word_to_index = build_vocab(2000)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### toTensor\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import torch\n",
+    "import torch.nn as nn\n",
+    "import torchvision.transforms as transforms\n",
+    "\n",
+    "\n",
+    "def toTensor(max_len, *args, **kwargs) -> torch.LongTensor:\n",
+    "    encoded =[]\n",
+    "    for s in word_docx: # 문장에 대하여 반복\n",
+    "        temp = []\n",
+    "        for w in s: # 단어에 대하여 반복\n",
+    "            try: # 단어 집합에 존재하는 단어인 경우\n",
+    "                temp.append(word_to_index[w]) # temp에 해당 단어의 인덱스 추가\n",
+    "            except KeyError: # 단어 집합에 존재하지 않는 단어인 경우\n",
+    "                temp.append(word_to_index['unk_idx']) # temp에 unk_idx의 인덱스 추가\n",
+    "        \n",
+    "        encoded.append(temp) # encoded에 정수 인코딩 한 리스트 추가\n",
+    "    \n",
+    "    final = encoded\n",
+    "    from torch.autograd import Variable\n",
+    "    seq_lengths = torch.LongTensor(list(map(len, final))) \n",
+    "\n",
+    "    seq_tensor = Variable(torch.zeros((len(final), seq_lengths.max()))).long()\n",
+    "    for idx, (seq, seqlen) in enumerate(zip(final, seq_lengths)):\n",
+    "        seq_tensor[idx, :seqlen] = torch.LongTensor(seq)\n",
+    "\n",
+    "    print(seq_lengths.max()) \n",
+    "    print(seq_tensor[0])  #확인\n",
+    "    print(seq_lengths[0]) #확인\n",
+    "            \n",
+    "    #tensor = torch.zeros(len(tokens), max_len).long()\n",
+    "       \n",
+    "\n",
+    "    return encoded, seq_tensor, seq_lengths"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "tensor(77)\n",
+      "tensor([   4,    1,  298,  603,  516, 1070,   28,   70,  250,  818,   86,    1,\n",
+      "        1071,   18,    1,   76,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0])\n",
+      "tensor(16)\n"
+     ]
+    }
+   ],
+   "source": [
+    "encoded, seq_tensor, seq_lengths = toTensor(77)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### 경험삼아.. 만들어본 dataset, dataloader"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(tensor([   4,    1,  298,  603,  516, 1070,   28,   70,  250,  818,   86,    1,\n",
+      "        1071,   18,    1,   76,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0]), tensor(0))\n"
+     ]
+    }
+   ],
+   "source": [
+    "import torch.utils.data.sampler as splr\n",
+    "from torch.utils.data import Dataset, TensorDataset\n",
+    "from torch.utils.data import DataLoader\n",
+    "from torch.utils.data.dataset import random_split\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "\n",
+    "\n",
+    "\n",
+    "class MailDataset(Dataset):\n",
+    "    '''mail dataset'''\n",
+    "    \n",
+    "    def __init__(self, x_tensor, y_tensor, batch_size):\n",
+    "        self.batch_size = batch_size\n",
+    "        self.x = x_tensor\n",
+    "        self.y = y_tensor\n",
+    "        \n",
+    "    \n",
+    "    def __getitem__(self, index):\n",
+    "        return (self.x[index], self.y[index])\n",
+    "    \n",
+    "    def __len__(self):\n",
+    "        return len(self.x)\n",
+    "    \n",
+    "x_tensor = seq_tensor\n",
+    "y_tensor = torch.tensor(data['isSpam'])    \n",
+    "\n",
+    "X_train_, X_test_, y_train_, y_test_ = train_test_split(x_tensor, y_tensor, random_state=0,\n",
+    "                                                   stratify=y, test_size=0.1)\n",
+    "\n",
+    "\n",
+    "dataset = MailDataset(x_tensor, y_tensor, 80)\n",
+    "train_dataset = MailDataset(X_train,y_train, 80)\n",
+    "test_dataset = MailDataset(X_test,y_test, 80)\n",
+    "\n",
+    "print(dataset[0]) #확인차\n",
+    "train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)\n",
+    "test_loader = DataLoader(test_dataset, batch_size=16, shuffle=True)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## train, test split \n",
+    "#### 사실상 이것이 쓰임"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "def train_test_split(data, vocab_size, max_len=30):\n",
+    "    from sklearn.model_selection import train_test_split\n",
+    "\n",
+    "\n",
+    "    final_processed = preprocess(data.text)\n",
+    "    document, word_docx = tokenize(final_processed)\n",
+    "    vocab, word_to_index = build_vocab(vocab_size)\n",
+    "    encoded, seq_tensor, seq_lengths = toTensor(max_len)\n",
+    "\n",
+    "    \n",
+    "    X, y =  seq_tensor, data['isSpam']\n",
+    "    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, stratify=y, test_size=0.1)\n",
+    "    \n",
+    "    print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)\n",
+    "    \n",
+    "    return X_train, X_test, y_train, y_test\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0       go jurong point crazi avail bugi n great world...\n",
+      "1                                   ok lar joke wif u oni\n",
+      "2       free entri wkli comp win fa cup final tkt st m...\n",
+      "3                     u dun say earli hor u c alreadi say\n",
+      "4                    nah think goe usf live around though\n",
+      "                              ...                        \n",
+      "5567    nd time tri contact u u moneysymb pound prize ...\n",
+      "5568                                b go esplanad fr home\n",
+      "5569                                    piti mood suggest\n",
+      "5570    guy bitch act like interest buy someth els nex...\n",
+      "5571                                       rofl true name\n",
+      "Name: text, Length: 5572, dtype: object\n",
+      "tensor(77)\n",
+      "tensor([   4,    1,  298,  603,  516, 1070,   28,   70,  250,  818,   86,    1,\n",
+      "        1071,   18,    1,   76,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,\n",
+      "           0,    0,    0,    0,    0])\n",
+      "tensor(16)\n",
+      "torch.Size([5014, 77]) (5014,) torch.Size([558, 77]) (558,)\n"
+     ]
+    }
+   ],
+   "source": [
+    "X_train, X_test,y_train,y_test=train_test_split(data, len(word_to_index)+1, 30)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### KERAS"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<br>\n",
+    "\n",
+    "***simple RNN***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/20\n",
+      "79/79 [==============================] - 2s 22ms/step - loss: 0.4274 - accuracy: 0.8490 - val_loss: 0.2813 - val_accuracy: 0.9250\n",
+      "Epoch 2/20\n",
+      "79/79 [==============================] - 1s 19ms/step - loss: 0.3944 - accuracy: 0.8660 - val_loss: 0.2783 - val_accuracy: 0.9250\n",
+      "Epoch 3/20\n",
+      "79/79 [==============================] - 1s 18ms/step - loss: 0.3945 - accuracy: 0.8660 - val_loss: 0.2869 - val_accuracy: 0.9250\n",
+      "Epoch 4/20\n",
+      "79/79 [==============================] - 2s 20ms/step - loss: 0.3944 - accuracy: 0.8660 - val_loss: 0.2878 - val_accuracy: 0.9250\n",
+      "Epoch 5/20\n",
+      "79/79 [==============================] - 1s 19ms/step - loss: 0.3947 - accuracy: 0.8660 - val_loss: 0.2865 - val_accuracy: 0.9250\n",
+      "Epoch 6/20\n",
+      "79/79 [==============================] - 2s 20ms/step - loss: 0.3938 - accuracy: 0.8660 - val_loss: 0.2990 - val_accuracy: 0.9250\n",
+      "Epoch 7/20\n",
+      "79/79 [==============================] - 2s 24ms/step - loss: 0.3942 - accuracy: 0.8660 - val_loss: 0.2761 - val_accuracy: 0.9250\n",
+      "Epoch 8/20\n",
+      "79/79 [==============================] - 2s 20ms/step - loss: 0.3948 - accuracy: 0.8660 - val_loss: 0.2824 - val_accuracy: 0.9250\n",
+      "Epoch 9/20\n",
+      "79/79 [==============================] - 2s 19ms/step - loss: 0.3945 - accuracy: 0.8660 - val_loss: 0.2822 - val_accuracy: 0.9250\n",
+      "Epoch 10/20\n",
+      "79/79 [==============================] - 1s 18ms/step - loss: 0.3943 - accuracy: 0.8660 - val_loss: 0.2965 - val_accuracy: 0.9250\n",
+      "Epoch 11/20\n",
+      "79/79 [==============================] - 2s 24ms/step - loss: 0.3944 - accuracy: 0.8660 - val_loss: 0.2843 - val_accuracy: 0.9250\n",
+      "Epoch 12/20\n",
+      "79/79 [==============================] - 2s 28ms/step - loss: 0.3888 - accuracy: 0.8692 - val_loss: 0.2752 - val_accuracy: 0.9250\n",
+      "Epoch 13/20\n",
+      "79/79 [==============================] - 2s 26ms/step - loss: 0.3744 - accuracy: 0.8767 - val_loss: 0.2809 - val_accuracy: 0.9250\n",
+      "Epoch 14/20\n",
+      "79/79 [==============================] - 2s 22ms/step - loss: 0.3647 - accuracy: 0.8813 - val_loss: 0.2721 - val_accuracy: 0.9250\n",
+      "Epoch 15/20\n",
+      "79/79 [==============================] - 2s 22ms/step - loss: 0.3620 - accuracy: 0.8827 - val_loss: 0.2727 - val_accuracy: 0.9250\n",
+      "Epoch 16/20\n",
+      "79/79 [==============================] - 2s 21ms/step - loss: 0.3522 - accuracy: 0.8871 - val_loss: 0.2767 - val_accuracy: 0.9250\n",
+      "Epoch 17/20\n",
+      "79/79 [==============================] - 2s 21ms/step - loss: 0.3602 - accuracy: 0.8831 - val_loss: 0.2789 - val_accuracy: 0.9250\n",
+      "Epoch 18/20\n",
+      "79/79 [==============================] - 2s 19ms/step - loss: 0.3613 - accuracy: 0.8831 - val_loss: 0.2701 - val_accuracy: 0.9250\n",
+      "Epoch 19/20\n",
+      "79/79 [==============================] - 2s 19ms/step - loss: 0.3553 - accuracy: 0.8861 - val_loss: 0.2749 - val_accuracy: 0.9250\n",
+      "Epoch 20/20\n",
+      "79/79 [==============================] - 2s 19ms/step - loss: 0.3445 - accuracy: 0.8915 - val_loss: 0.2711 - val_accuracy: 0.9250\n"
+     ]
+    }
+   ],
+   "source": [
+    "from tensorflow.keras.layers import SimpleRNN, Embedding, Dense\n",
+    "from tensorflow.keras.models import Sequential\n",
+    "import random\n",
+    "\n",
+    "###40개의 example 준비하기\n",
+    "idx = random.sample(range(len(y_test)), 40)\n",
+    "\n",
+    "X_sample = torch.index_select(X_test, 0, torch.tensor(idx))\n",
+    "y_sample = y_test.reset_index(drop=True)[idx]\n",
+    "\n",
+    "\n",
+    "#simple RNN model\n",
+    "vocab_size = len(word_to_index)+1\n",
+    "model = Sequential()\n",
+    "model.add(Embedding(vocab_size, 32)) # 임베딩 벡터의 차원은 32\n",
+    "model.add(SimpleRNN(32)) # RNN 셀의 hidden_size는 32\n",
+    "model.add(Dense(1, activation='sigmoid'))\n",
+    "model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])\n",
+    "history = model.fit(X_train.numpy(), (y_train).to_numpy(), epochs=20, batch_size=64, \n",
+    "                    validation_data=(X_sample.numpy(), (y_sample).to_numpy()))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "18/18 [==============================] - 0s 9ms/step - loss: 0.3301 - accuracy: 0.8978\n",
+      "\n",
+      " 테스트 정확도: 0.8978\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"\\n 테스트 정확도: %.4f\" % (model.evaluate(X_test.numpy(), y_test.to_numpy())[1]))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<br>\n",
+    "\n",
+    "***bi-LSTM***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/30\n",
+      "10/10 [==============================] - 6s 620ms/step - loss: 0.6450 - accuracy: 0.8307 - val_loss: 0.5091 - val_accuracy: 0.9250\n",
+      "Epoch 2/30\n",
+      "10/10 [==============================] - 4s 417ms/step - loss: 0.4314 - accuracy: 0.8660 - val_loss: 0.2518 - val_accuracy: 0.9250\n",
+      "Epoch 3/30\n",
+      "10/10 [==============================] - 5s 517ms/step - loss: 0.3749 - accuracy: 0.8660 - val_loss: 0.2759 - val_accuracy: 0.9250\n",
+      "Epoch 4/30\n",
+      "10/10 [==============================] - 5s 454ms/step - loss: 0.3378 - accuracy: 0.8660 - val_loss: 0.1986 - val_accuracy: 0.9250\n",
+      "Epoch 5/30\n",
+      "10/10 [==============================] - 5s 524ms/step - loss: 0.2432 - accuracy: 0.8827 - val_loss: 0.1386 - val_accuracy: 0.9750\n",
+      "Epoch 6/30\n",
+      "10/10 [==============================] - 5s 536ms/step - loss: 0.1515 - accuracy: 0.9605 - val_loss: 0.0934 - val_accuracy: 0.9750\n",
+      "Epoch 7/30\n",
+      "10/10 [==============================] - 6s 566ms/step - loss: 0.0931 - accuracy: 0.9805 - val_loss: 0.0526 - val_accuracy: 0.9750\n",
+      "Epoch 8/30\n",
+      "10/10 [==============================] - 5s 522ms/step - loss: 0.0590 - accuracy: 0.9868 - val_loss: 0.0456 - val_accuracy: 0.9750\n",
+      "Epoch 9/30\n",
+      "10/10 [==============================] - 6s 563ms/step - loss: 0.0424 - accuracy: 0.9900 - val_loss: 0.0740 - val_accuracy: 0.9750\n",
+      "Epoch 10/30\n",
+      "10/10 [==============================] - 5s 535ms/step - loss: 0.0363 - accuracy: 0.9912 - val_loss: 0.0690 - val_accuracy: 0.9750\n",
+      "Epoch 11/30\n",
+      "10/10 [==============================] - 5s 514ms/step - loss: 0.0270 - accuracy: 0.9938 - val_loss: 0.0785 - val_accuracy: 0.9750\n",
+      "Epoch 12/30\n",
+      "10/10 [==============================] - 7s 666ms/step - loss: 0.0213 - accuracy: 0.9950 - val_loss: 0.0816 - val_accuracy: 0.9750\n",
+      "Epoch 13/30\n",
+      "10/10 [==============================] - 6s 648ms/step - loss: 0.0193 - accuracy: 0.9960 - val_loss: 0.1169 - val_accuracy: 0.9750\n",
+      "Epoch 14/30\n",
+      "10/10 [==============================] - 6s 643ms/step - loss: 0.0148 - accuracy: 0.9964 - val_loss: 0.1313 - val_accuracy: 0.9750\n",
+      "Epoch 15/30\n",
+      "10/10 [==============================] - 5s 464ms/step - loss: 0.0148 - accuracy: 0.9966 - val_loss: 0.1277 - val_accuracy: 0.9750\n",
+      "Epoch 16/30\n",
+      "10/10 [==============================] - 5s 466ms/step - loss: 0.0143 - accuracy: 0.9964 - val_loss: 0.1319 - val_accuracy: 0.9750\n",
+      "Epoch 17/30\n",
+      "10/10 [==============================] - 5s 470ms/step - loss: 0.0116 - accuracy: 0.9976 - val_loss: 0.1534 - val_accuracy: 0.9750\n",
+      "Epoch 18/30\n",
+      "10/10 [==============================] - 5s 476ms/step - loss: 0.0102 - accuracy: 0.9978 - val_loss: 0.1610 - val_accuracy: 0.9750\n",
+      "Epoch 19/30\n",
+      "10/10 [==============================] - 5s 471ms/step - loss: 0.0086 - accuracy: 0.9978 - val_loss: 0.1699 - val_accuracy: 0.9750\n",
+      "Epoch 20/30\n",
+      "10/10 [==============================] - 5s 494ms/step - loss: 0.0105 - accuracy: 0.9970 - val_loss: 0.1749 - val_accuracy: 0.9750\n",
+      "Epoch 21/30\n",
+      "10/10 [==============================] - 5s 523ms/step - loss: 0.0083 - accuracy: 0.9974 - val_loss: 0.1916 - val_accuracy: 0.9750\n",
+      "Epoch 22/30\n",
+      "10/10 [==============================] - 6s 568ms/step - loss: 0.0077 - accuracy: 0.9978 - val_loss: 0.1936 - val_accuracy: 0.9750\n",
+      "Epoch 23/30\n",
+      "10/10 [==============================] - 5s 548ms/step - loss: 0.0058 - accuracy: 0.9984 - val_loss: 0.1966 - val_accuracy: 0.9750\n",
+      "Epoch 24/30\n",
+      "10/10 [==============================] - 5s 503ms/step - loss: 0.0055 - accuracy: 0.9986 - val_loss: 0.2093 - val_accuracy: 0.9750\n",
+      "Epoch 25/30\n",
+      "10/10 [==============================] - 5s 498ms/step - loss: 0.0050 - accuracy: 0.9986 - val_loss: 0.2160 - val_accuracy: 0.9750\n",
+      "Epoch 26/30\n",
+      "10/10 [==============================] - 6s 585ms/step - loss: 0.0045 - accuracy: 0.9990 - val_loss: 0.2245 - val_accuracy: 0.9750\n",
+      "Epoch 27/30\n",
+      "10/10 [==============================] - 6s 587ms/step - loss: 0.0037 - accuracy: 0.9994 - val_loss: 0.2326 - val_accuracy: 0.9750\n",
+      "Epoch 28/30\n",
+      "10/10 [==============================] - 6s 601ms/step - loss: 0.0042 - accuracy: 0.9992 - val_loss: 0.2320 - val_accuracy: 0.9750\n",
+      "Epoch 29/30\n",
+      "10/10 [==============================] - 6s 581ms/step - loss: 0.0042 - accuracy: 0.9990 - val_loss: 0.2410 - val_accuracy: 0.9750\n",
+      "Epoch 30/30\n",
+      "10/10 [==============================] - 5s 532ms/step - loss: 0.0036 - accuracy: 0.9994 - val_loss: 0.2397 - val_accuracy: 0.9750\n"
+     ]
+    }
+   ],
+   "source": [
+    "#잠을 자기 위해 pytorch를 던져보자 Keras..나와라\n",
+    "\n",
+    "from tensorflow.keras.layers import SimpleRNN, Embedding, Dense, LSTM,Bidirectional,Dropout\n",
+    "from tensorflow.keras.models import Sequential\n",
+    "\n",
+    "vocab_size = len(word_to_index)+1\n",
+    "model = Sequential()\n",
+    "model.add(Embedding(5000, 32)) # 임베딩 벡터의 차원은 32\n",
+    "model.add(Bidirectional(LSTM(64)))\n",
+    "model.add(Dense(16, activation='relu'))\n",
+    "model.add(Dropout(0.1))\n",
+    "model.add(Dense(1, activation='sigmoid'))\n",
+    "\n",
+    "model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])\n",
+    "history = model.fit(X_train.numpy(), (y_train).to_numpy(), epochs=30, batch_size=512,\n",
+    "                    validation_data=(X_sample.numpy(), (y_sample).to_numpy()))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "18/18 [==============================] - 1s 31ms/step - loss: 0.0971 - accuracy: 0.9857\n",
+      "\n",
+      " 테스트 정확도: 0.9857\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"\\n 테스트 정확도: %.4f\" % (model.evaluate(X_test.numpy(), (y_test).to_numpy())[1]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
