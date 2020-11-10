@@ -13,11 +13,11 @@ https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z
 |9/17|4,5강<br>(Introduction to NN, CNN)|3,4강<br>(NN, Backpropagation)|1조,4조|
 |9/24|6,7강<br>(Training1,2)|6,7강<br>(Language Models and RNN,<br>Fancy RNN)|3조,5조|
 |10/8|9강<br>(CNN variants)|8강<br>(Seq2Seq, Attention)|랜덤추출|
-|10/29|중간과제발표|중간과제발표||
-|10/31|10강<br>(RNN)|11강<br>(Convnets for NLP)||
-|11/5|11강<br>(Detection and Segmentatino)|12강<br>(Subword Models)||
-|11/12|13강: GAN 전까지<br>(Generative Models)|13강<br>(Contextual Word Embeddings)||
-|11/19|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)||
+|10/29|중간과제발표|중간과제발표|Week5|
+|10/31|10강<br>(RNN)|11강<br>(Convnets for NLP)|Week5|
+|11/5|11강<br>(Detection and Segmentatino)|12강<br>(Subword Models)|Week6|
+|11/12|13강: GAN 전까지<br>(Generative Models)|13강<br>(Contextual Word Embeddings)|Week7|
+|11/19|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)|Week8|
 |11/26|파이널 준비 세션|파이널 준비 세션||
 |12/3|파이널 발표 세션|파이널 발표 세션||
 
