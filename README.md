@@ -1,5 +1,7 @@
 # ESC-20FALL
 
+공사중: 공사기간 20201110~20201111
+
 [CV강의링크] <br>
 https://www.youtube.com/playlist?list=PLC1qU-LWwrF64f4QKQT-Vg5Wr4qEE1Zxk
 
