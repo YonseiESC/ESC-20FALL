@@ -240,7 +240,7 @@ def write(x, results):
 
 list(map(lambda x: write(x, loaded_ims), output))
 
-det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det,x.split("/")[-1]))
+det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det,x.split("\\")[-1]))
 
 list(map(cv2.imwrite, det_names, loaded_ims))
 
