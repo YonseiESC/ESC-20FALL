@@ -50,6 +50,8 @@ Pytorch re-implementation of Convolutional Neural Networks for Sentence Classifi
       --num-feature-maps NUM_FEATURE_MAPS
       --pretrained-word-vectors           available models: fasttext, Word2Vec
       --save-word-vectors SAVE_WORD_VECTORS           default:False
+      
+> 또는 cnn_for_sentence_classification.ipynb를 통해 colab으로 연결하여 바로 실행 해볼 수 있습니다.
 
 
 ## 4. Results
