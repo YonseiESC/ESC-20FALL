@@ -73,7 +73,7 @@ Re-implementation with Word2Vec and fasttext
 > | static | 81.30 | 82.56 | 
 > | non-static | 81.75| 82.65 |
 
-  *no pre-trained word vector
+  *not use pre-trained word vector
 
 
 
