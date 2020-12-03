@@ -1,4 +1,14 @@
-## Test
+## Parameter
+batch_size: 32 <br>
+num_epoch: 100 <br>
+warm_steps: 2000 <br>
+
+hidden_dim: 120<br>
+feed_forward_dim: 1024<br>
+n_layer: 3<br>
+n_head: 8<br>
+max_len: 64<br>
+dropout: 0.1
 
 
 ## Transformer PyTorch implementation
