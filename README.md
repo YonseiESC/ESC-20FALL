@@ -17,10 +17,10 @@ https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z
 |10/8|9강<br>(CNN variants)|8강<br>(Seq2Seq, Attention)|Week4<br>랜덤추출|
 |10/29|중간과제발표|중간과제발표|Week5|
 |10/31|10강<br>(RNN)|11강<br>(Convnets for NLP)|Week5<br>1조,4조|
+|10/31|연사특강| 응용통계학과 대학원 생활 및 졸업 후 진로에 대한 연사특강|명재성 연사님|
 |11/5|11강<br>(Detection and Segmentatino)|12강<br>(Subword Models)|Week6<br>2조,5조|
 |11/12|13강: GAN 전까지<br>(Generative Models)|13강<br>(Contextual Word Embeddings)|Week7<br>3조,4조|
-|11/19|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)|Week8<br>2조,5조|
+|11/19|연사특강| 대학원 유학 - 무엇을, 그리고 어떻게?|이상욱, 송채근, 박세희 연사님|
+|11/21|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)|Week8<br>2조,5조|
 |11/26|파이널 준비 세션|파이널 준비 세션||
 |12/3|파이널 발표 세션|파이널 발표 세션||
-
-정규세션은 목 19시부터 21시까지 진행됩니다. 
