@@ -1,6 +1,8 @@
 ESC_20FALL_Final_TEAM4
 =======================
 # CNN을 이용한 MR(Movie Review) 데이터 감성 분석
+### ESC NLP 4조 최정윤, 신예진, 김민규, 오다건
+
 Pytorch re-implementation of Convolutional Neural Networks for Sentence Classification.
 * Original github url : https://github.com/yuna-102/ESC_20FALL_Final_TEAM4.git
 
@@ -33,7 +35,17 @@ Pytorch re-implementation of Convolutional Neural Networks for Sentence Classifi
 
 
 ## 3. Implementation
- 
+~~~
+python main.py --mode rand
+python main.py --mode static
+python main.py --mode non-static
+~~~
+or
+~~~
+python main.py --help
+~~~
+You will get:
+
     usage: main.py [-h] [--batch-size BATCH_SIZE] [--dropout DROPOUT] 
                     [--epoch EPOCH] [--learning-rate LEARNING_RATE]
                     [----predict PREDICT] [--mode MODE]
@@ -76,6 +88,14 @@ Re-implementation with Word2Vec and fasttext
   *cnn-rand의 경우 pre-trained word vector를 사용하지 않음
 
 
+## 5. References
 
+[Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
+
+[Kim's implementation of the model in Theano](https://github.com/yoonkim/CNN_sentence)
+
+[Shawn's implementation of the model in Theano](https://github.com/Shawn1993/cnn-text-classification-pytorch)
+
+[Chriskhanhtran's implementation of the model in Pytorch](https://chriskhanhtran.github.io/posts/cnn-sentence-classification/)
 
 
