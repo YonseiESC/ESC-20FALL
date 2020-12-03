@@ -1,8 +1,8 @@
 ## 아래는 yolo 시각화 영상입니다.
 
-https://www.youtube.com/watch?v=1SV43wR0TUw 연세동영상
-https://www.youtube.com/watch?v=ileQG9P8Ses 소리있는 테넷 예고편 (약 30초)
-https://www.youtube.com/watch?v=E32yr3OMV3Q 소리 없는 테넷 예고편 (일부 잘림 약 1분30초)
+https://www.youtube.com/watch?v=1SV43wR0TUw 연세동영상  
+https://www.youtube.com/watch?v=ileQG9P8Ses 소리있는 테넷 예고편 (약 30초)  
+https://www.youtube.com/watch?v=E32yr3OMV3Q 소리 없는 테넷 예고편 (일부 잘림 약 1분30초)  
 
 
 
