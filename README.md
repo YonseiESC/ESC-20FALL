@@ -22,6 +22,6 @@ https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z
 |11/12|13강: GAN 전까지<br>(Generative Models)|13강<br>(Contextual Word Embeddings)|Week7<br>3조,4조|
 |11/19|연사특강| 대학원 유학 - 무엇을, 그리고 어떻게?|이상욱, 송채근, 박세희 연사님|
 |11/21|13강: GAN+16강<br>(Adversarial Training)|14강<br>(Transformers)|Week8<br>2조,5조|
-|11/26|Q&A세션|통계학과 진로, 유학생활 및 딥러닝 전반에 대한 의견|박재우 교수님|
+|11/26|Q&A세션|통계학 및 진로, 유학생활 및 딥러닝 전반에 대한 |박재우 교수님|
 |11/26|파이널 준비 세션|파이널 준비 세션||
 |12/3|파이널 발표 세션|파이널 발표 세션||
