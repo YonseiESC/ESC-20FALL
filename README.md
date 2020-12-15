@@ -25,3 +25,42 @@ https://www.youtube.com/playlist?list=PLoROMvodv4rOhcuXMZkNm7j3fVwBBY42z
 |11/26|Q&A세션|통계학 및 진로, 유학생활 및 딥러닝 전반에 대한 |박재우 교수님|
 |11/26|파이널 준비 세션|파이널 준비 세션||
 |12/3|파이널 발표 세션|파이널 발표 세션||
+
+## 세션 영상 유튜브 링크
+
+[ESC 2020-2] 200910 CV,NLP Week1 <br>
+https://youtu.be/LwAtfczD_EE
+
+[ESC 2020-2] 200917 CV,NLP Week2 <br>
+https://youtu.be/2q-G36yzccU
+
+[ESC 2020-2] 200924 CV,NLP Week3 <br>
+https://youtu.be/cxknXpOqRwQ
+
+[ESC 2020-2] 201008 CV,NLP Week4 <br>
+https://youtu.be/otvmXnJa2vw
+
+[ESC 2020-2] 201029 CV,NLP Week5(중간과제발표) <br>
+https://youtu.be/H4qF6_KzduI
+
+[ESC 2020-2] 201031 CV,NLP Week5(정규) <br>
+https://youtu.be/_EROTlGHLOU
+
+[ESC 2020-2] 201105 CV,NLP Week6 <br>
+https://youtu.be/yoxRIsEqluQ
+
+[ESC 2020-2] 201112 CV,NLP Week7 <br>
+https://youtu.be/9S3P8qaPC2M
+
++) 추가 영상
+[ESC 2020-2] 200907 학술부발표 (NLP 논문리딩) <br>
+https://youtu.be/uVpXiMH-Ggw
+
+[ESC 2020-2] 201102 학술부발표 <br>
+https://youtu.be/bBCg5-nemog
+
+[ESC 2020-2] 201109 학술부발표 <br>
+https://youtu.be/I6XOEuoJWX4
+
+[ESC 2020-2] 201116 학술부발표 <br>
+https://youtu.be/ZtFFYj2ONzg
