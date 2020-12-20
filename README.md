@@ -52,6 +52,15 @@ https://youtu.be/yoxRIsEqluQ
 [ESC 2020-2] 201112 CV,NLP Week7 <br>
 https://youtu.be/9S3P8qaPC2M
 
+[ESC 2020-2] 201121 CV,NLP Week8 <br>
+https://youtu.be/VchXgkbFZI4
+
+[ESC 2020-2] 201126 CV,NLP 파이널 준비 <br>
+https://youtu.be/7_uKca6kpf4
+
+[ESC 2020-2] 201203 CV,NLP 파이널 <br>
+https://youtu.be/NA44d0QkDDE
+
 +) 추가 영상
 [ESC 2020-2] 200907 학술부발표 (NLP 논문리딩) <br>
 https://youtu.be/uVpXiMH-Ggw
